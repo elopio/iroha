@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef IROHA_GET_TRANSACTIONS_HPP
-#define IROHA_GET_TRANSACTIONS_HPP
+#ifndef IROHA_GET_ACCOUNT_ASSET_TRANSACTIONS_HPP
+#define IROHA_GET_ACCOUNT_ASSET_TRANSACTIONS_HPP
 
 #include <model/query.hpp>
 #include <string>
@@ -26,16 +26,34 @@
 namespace iroha {
   namespace model {
     /**
-     * Query for getting transactions of given transactions' hashes
+     * Query for getting transactions of given asset of an account
      */
-    struct GetTransactions : Query {
-      using TxHashType = iroha::hash256_t;
-      using TxHashCollectionType = std::vector<TxHashType>;
+    struct GetAccountAssetTransactions : Query {
       /**
-       * Hashes of the transaction to be retrieved
+       * Account identifier
        */
-      TxHashCollectionType tx_hashes{};
+      std::string account_id{};
+
+      /**
+       * Asset identifiers
+       */
+      std::vector<std::string> assets_id{};
+
+      /**
+       * Pager for transactions
+       */
+      Pager pager{};
+
+      using AssetsIdType = decltype(assets_id);
+
+      bool operator==(GetAccountAssetTransactions const& rhs) const {
+        return account_id == rhs.account_id and assets_id == rhs.assets_id
+               and pager == rhs.pager;
+      }
+      bool operator!=(GetAccountAssetTransactions const& rhs) const {
+        return not(operator==(rhs));
+      }
     };
   }  // namespace model
 }  // namespace iroha
-#endif  // IROHA_GET_TRANSACTIONS_HPP
+#endif  // IROHA_GET_ACCOUNT_ASSET_TRANSACTIONS_HPP

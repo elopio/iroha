@@ -16,6 +16,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <boost/algorithm/string/join.hpp>
 #include <boost/range/combine.hpp>
 #include <boost/range/algorithm/for_each.hpp>
 
@@ -93,14 +94,16 @@ void validateAccountTransactions(B &&blocks,
 template <typename B>
 void validateAccountAssetTransactions(B &&blocks,
                                       const std::string &account,
-                                      const std::string &asset,
+                                      const std::vector<std::string> &assets,
                                       int call_count,
                                       int command_count) {
+  // to check only latest account asset tx
+  const Pager pager {iroha::hash256_t{}, 1};
   validateCalls(
-      blocks->getAccountAssetTransactions(account, asset),
+      blocks->getAccountAssetTransactions(account, assets, pager),
       [&](const auto &tx) { EXPECT_EQ(tx.commands.size(), command_count); },
       call_count,
-      " for " + account + " " + asset);
+      " for " + account + " " + boost::algorithm::join(assets, ","));
 }
 
 /**
@@ -257,10 +260,10 @@ TEST_F(AmetsuchiTest, SampleTest) {
   validateAccountTransactions(blocks, "admin2", 1, 4);
   validateAccountTransactions(blocks, "non_existing_user", 0, 0);
 
-  validateAccountAssetTransactions(blocks, user1id, assetid, 1, 4);
-  validateAccountAssetTransactions(blocks, user2id, assetid, 1, 4);
+  validateAccountAssetTransactions(blocks, user1id, {assetid}, 1, 4);
+  validateAccountAssetTransactions(blocks, user2id, {assetid}, 1, 4);
   validateAccountAssetTransactions(
-      blocks, "non_existing_user", "non_existing_asset", 0, 0);
+      blocks, "non_existing_user", {"non_existing_asset"}, 0, 0);
 }
 
 TEST_F(AmetsuchiTest, PeerTest) {
@@ -413,12 +416,12 @@ TEST_F(AmetsuchiTest, queryGetAccountAssetTransactionsTest) {
   // (user1 -> user2 # asset1)
   // (user2 -> user3 # asset2)
   // (user2 -> user1 # asset2)
-  validateAccountAssetTransactions(blocks, user1id, asset1id, 1, 1);
-  validateAccountAssetTransactions(blocks, user2id, asset1id, 1, 1);
-  validateAccountAssetTransactions(blocks, user3id, asset1id, 0, 0);
-  validateAccountAssetTransactions(blocks, user1id, asset2id, 1, 2);
-  validateAccountAssetTransactions(blocks, user2id, asset2id, 1, 2);
-  validateAccountAssetTransactions(blocks, user3id, asset2id, 1, 2);
+  validateAccountAssetTransactions(blocks, user1id, {asset1id}, 1, 1);
+  validateAccountAssetTransactions(blocks, user2id, {asset1id}, 1, 1);
+  validateAccountAssetTransactions(blocks, user3id, {asset1id}, 0, 0);
+  validateAccountAssetTransactions(blocks, user1id, {asset2id}, 1, 2);
+  validateAccountAssetTransactions(blocks, user2id, {asset2id}, 1, 2);
+  validateAccountAssetTransactions(blocks, user3id, {asset2id}, 1, 2);
 }
 
 TEST_F(AmetsuchiTest, AddSignatoryTest) {
